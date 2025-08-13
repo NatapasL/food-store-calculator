@@ -21,9 +21,8 @@ export class Calculator {
 
   calculate(order: Order, options: OrderOptions = {}): number {
     const subtotal = this.sumOrderPrices(order);
-    const totalDiscount = this.sumDiscounts(order, subtotal, options);
 
-    return subtotal - totalDiscount;
+    return this.applyDiscount(order, subtotal, options);
   }
 
   private sumOrderPrices(order: Order): number {
@@ -37,11 +36,23 @@ export class Calculator {
     }, 0);
   }
 
-  private sumDiscounts(order: Order, subtotal: number, options): number {
-    return this.discounts.reduce((sum, discount) => {
-      return (
-        sum + discount.calculate({ order, subtotal, orderOptions: options })
-      );
-    }, 0);
+  private applyDiscount(
+    order: Order,
+    subtotal: number,
+    options: OrderOptions
+  ): number {
+    return this.discounts.reduce((remainingSubtotal, discount) => {
+      const discountAmount = discount.calculate({
+        order,
+        subtotal: remainingSubtotal,
+        orderOptions: options,
+      });
+
+      if (discountAmount > remainingSubtotal) {
+        return 0;
+      }
+
+      return remainingSubtotal - discountAmount;
+    }, subtotal);
   }
 }

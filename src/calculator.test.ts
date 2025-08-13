@@ -36,46 +36,54 @@ describe('Calculator', () => {
   });
 
   describe('#calculate', () => {
-    describe('when a valid order is provided', () => {
-      it('calculates the final price by subtracting all discounts from the subtotal', () => {
+    describe('when multiple discounts are applied', () => {
+      it('applies them sequentially, passing the reduced subtotal to subsequent rules', () => {
         const calculator = new Calculator(menu, [
           discountRule,
           anotherDiscountRule,
         ]);
         const order: Order = {
-          [redSet.name]: 2,
-          [greenSet.name]: 3,
+          [redSet.name]: 4,
         };
+        const orderOptions: OrderOptions = { hasMembershipCard: true };
 
-        discountRuleCalculate.mockReturnValue(15);
-        anotherDiscountRuleCalculate.mockReturnValue(5);
+        discountRuleCalculate.mockReturnValue(20);
+        anotherDiscountRuleCalculate.mockReturnValue(10);
+
+        const finalPrice = calculator.calculate(order, orderOptions);
+
+        expect(finalPrice).toBe(170);
+
+        expect(discountRuleCalculate).toHaveBeenCalledWith({
+          order,
+          subtotal: 200,
+          orderOptions,
+        });
+
+        expect(anotherDiscountRuleCalculate).toHaveBeenCalledWith({
+          order,
+          subtotal: 180,
+          orderOptions,
+        });
+      });
+    });
+
+    describe('when a discount amount exceeds the remaining subtotal', () => {
+      it('caps the final price at 0 and does not go negative', () => {
+        const calculator = new Calculator(menu, [discountRule]);
+        const order: Order = { [greenSet.name]: 1 };
+
+        discountRuleCalculate.mockReturnValue(100);
 
         const finalPrice = calculator.calculate(order);
 
-        expect(finalPrice).toBe(140);
-      });
-
-      it('passes the correct subtotal, order, and options to the discount rules', () => {
-        const calculator = new Calculator(menu, [discountRule]);
-        const order: Order = { [redSet.name]: 1 };
-        const orderOptions: OrderOptions = { hasMembershipCard: true };
-
-        discountRuleCalculate.mockReturnValue(0);
-
-        calculator.calculate(order, orderOptions);
-
-        expect(discountRule.calculate).toHaveBeenCalledWith({
-          order,
-          subtotal: 50,
-          orderOptions,
-        });
-        expect(discountRule.calculate).toHaveBeenCalledTimes(1);
+        expect(finalPrice).toBe(0);
       });
     });
 
     describe('when there are no discount rules', () => {
       it('returns the full subtotal', () => {
-        const calculator = new Calculator(menu, []); // No discounts
+        const calculator = new Calculator(menu, []);
         const order: Order = {
           [redSet.name]: 1,
           [greenSet.name]: 2,
@@ -93,7 +101,7 @@ describe('Calculator', () => {
 
         expect(calculator.calculate(order)).toBe(0);
 
-        expect(discountRule.calculate).toHaveBeenCalledWith({
+        expect(discountRuleCalculate).toHaveBeenCalledWith({
           order: {},
           subtotal: 0,
           orderOptions: {},
