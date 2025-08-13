@@ -10,7 +10,7 @@ export const RED_SET_PRICE = 50;
 export const GREEN_SET_PRICE = 40;
 export const BLUE_SET_PRICE = 30;
 export const YELLOW_SET_PRICE = 50;
-export const PINK_SET_PRICE = 40;
+export const PINK_SET_PRICE = 80;
 export const PURPLE_SET_PRICE = 90;
 export const ORANGE_SET_PRICE = 120;
 
